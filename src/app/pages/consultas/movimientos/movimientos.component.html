@@ -73,12 +73,16 @@
             <td>{{ p.montoImputadoInteres | monto: moneda }}</td>
             <td>{{ p.montoImputadoMora | monto: moneda }}</td>
             <td>{{ p.montoPagado | monto: moneda }}</td>
-            <td><app-estado [estado]="p.estadoDeuda"></app-estado></td>
-          </tr>
-        } @empty {
-          <tr><td colspan="8" class="vacio">{{ mensajeVacio }}</td></tr>
-        }
-      </tbody>
-    </table>
-  }
-</div>
+              <td>
+                  <app-estado [estado]="p.estadoDeuda || 'Pagado'"></app-estado>
+                  @if (p.diasMora > 0) { <small class="detalle-estado">con {{ p.diasMora }} días de mora</small> }
+                  @else if (p.diasAnticipacion > 0) { <small class="detalle-estado">anticipado {{ p.diasAnticipacion }} días</small> }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" class="vacio">{{ mensajeVacio }}</td></tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
