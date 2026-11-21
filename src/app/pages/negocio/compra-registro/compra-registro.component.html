@@ -1,0 +1,203 @@
+<h1 class="titulo">Registro de compra a crédito</h1>
+
+<!-- Datos generales de la compra -->
+<section class="panel-datos" [formGroup]="form">
+  <label class="campo-etiquetado">Cliente
+    <select class="campo" formControlName="idCliente">
+      <option value="" disabled>Seleccione el cliente</option>
+      @for (c of clientes; track c.idCliente) {
+        <option [value]="c.idCliente">{{ c.nombreCliente }} ({{ c.numeroDocumentoCliente }})</option>
+      }
+    </select>
+  </label>
+  <label class="campo-etiquetado">Tipo de pago
+    <select class="campo" formControlName="tipoPago">
+      <option value="Un solo pago">Un solo pago</option>
+      <option value="Cuotas">Cuotas</option>
+    </select>
+  </label>
+  <label class="campo-etiquetado">Fecha de compra
+    <input class="campo" type="date" formControlName="fechaCompra">
+  </label>
+  <label class="campo-etiquetado">
+    Número de cuotas{{ clienteSeleccionado ? ' (máx. ' + clienteSeleccionado.maximoMesesCredito + ')' : '' }}
+    <input class="campo" type="number" min="1" step="1" formControlName="numeroCuotas"
+           [attr.max]="clienteSeleccionado?.maximoMesesCredito ?? null">
+  </label>
+</section>
+
+<div class="compra-layout">
+  <div class="compra-principal">
+
+    <!-- Agregar producto -->
+    <section class="panel-agregar" [formGroup]="formProducto">
+      <h2 class="subtitulo-seccion">Agregar producto</h2>
+      <div class="fila-agregar">
+        <label class="campo-etiquetado">Producto
+          <select class="campo" formControlName="idProducto">
+            <option value="">Seleccione el producto</option>
+            @for (p of productosDisponibles; track p.idProducto) {
+              <option [value]="p.idProducto">{{ p.descripcionProducto }}</option>
+            }
+          </select>
+        </label>
+        <label class="campo-etiquetado">Cantidad
+          <input class="campo" type="number" min="1" step="1" formControlName="cantidad">
+        </label>
+        <label class="campo-etiquetado">Precio crédito
+          <input class="campo" type="text" readonly
+                 [value]="productoSeleccionado ? (productoSeleccionado.precioCredito | monto: moneda) : ''">
+        </label>
+        <label class="campo-etiquetado">Subtotal
+          <input class="campo" type="text" readonly [value]="subtotalProducto !== null ? (subtotalProducto | monto: moneda) : ''">
+        </label>
+        <button type="button" class="btn btn-agregar" (click)="agregarProducto()">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          Agregar
+        </button>
+      </div>
+      <p class="nota">
+        Solo se muestran productos activos cuya modalidad admite el tipo de pago elegido ({{ form.controls.tipoPago.value }}).
+      </p>
+      @if (avisoProductos) { <p class="alerta alerta-info">{{ avisoProductos }}</p> }
+    </section>
+
+    <!-- Productos de la compra -->
+    <section>
+      <h2 class="subtitulo-seccion">Productos de la compra</h2>
+      <div class="tabla-contenedor">
+        <table class="tabla tabla-oscura">
+          <thead>
+            <tr>
+              <th>N.º</th><th>Producto</th><th>Modalidad</th>
+              <th class="derecha">Cantidad</th><th class="derecha">Precio crédito</th>
+              <th class="derecha">Subtotal</th><th class="centro">Quitar</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lineas; track l.producto.idProducto; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td>{{ l.producto.descripcionProducto }}</td>
+                <td>{{ etiquetaModalidad(l.producto.modalidadVentaProducto) }}</td>
+                <td class="derecha">{{ l.cantidad }}</td>
+                <td class="derecha">{{ l.producto.precioCredito | monto: moneda }}</td>
+                <td class="derecha">{{ l.producto.precioCredito * l.cantidad | monto: moneda }}</td>
+                <td class="centro">
+                  <button type="button" class="btn-quitar" (click)="quitarLinea(i)"
+                          [attr.aria-label]="'Quitar ' + l.producto.descripcionProducto" title="Quitar">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"></path>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="vacio">Aún no se agregaron productos a la compra.</td></tr>
+            }
+          </tbody>
+          @if (lineas.length) {
+            <tfoot>
+              <tr>
+                <td colspan="3">Total ({{ lineas.length }} {{ lineas.length === 1 ? 'producto' : 'productos' }})</td>
+                <td class="derecha">{{ totalUnidades }}</td>
+                <td></td>
+                <td class="derecha">{{ totalCarrito | monto: moneda }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Resumen -->
+  <aside class="resumen-columna compra-resumen">
+    <h2 class="resumen-titulo">Resumen</h2>
+    <div class="resumen">
+      <dl>
+        <dt>Límite de crédito:</dt>
+        <dd>{{ (resumen?.limiteCredito ?? clienteSeleccionado?.limiteCredito) | monto: moneda }}</dd>
+        <dt>Deuda actual:</dt>
+        <dd>{{ (resumen?.deudaActual ?? clienteSeleccionado?.creditoUtilizado) | monto: moneda }}</dd>
+        <dt>Crédito disponible:</dt>
+        <dd>{{ (resumen?.creditoDisponible ?? clienteSeleccionado?.creditoDisponible) | monto: moneda }}</dd>
+
+        <dt class="separado">Productos:</dt>
+        <dd class="separado">{{ lineas.length ? lineas.length + ' (' + totalUnidades + ' unidades)' : '—' }}</dd>
+        <dt>Monto compra:</dt>
+        <dd>{{ (resumen?.montoCompra ?? (lineas.length ? totalCarrito : null)) | monto: moneda }}</dd>
+        @if (esCuotas) {
+          <dt>Cuota estimada:</dt>
+          <dd class="destacado">
+            {{ cuotaEstimada | monto: moneda }}{{ resumen ? ' × ' + resumen.numeroCuotas : '' }}
+          </dd>
+          <dt>Primera cuota:</dt>
+          <dd>{{ resumen?.proximaFechaPago | date: 'dd/MM/yyyy' }}</dd>
+        } @else {
+          <dt>Total a pagar:</dt>
+          <dd class="destacado">{{ cuotaEstimada | monto: moneda }}</dd>
+          <dt>Fecha de pago:</dt>
+          <dd>{{ resumen?.fechaPagoPactada | date: 'dd/MM/yyyy' }}</dd>
+        }
+        <dt>Disponible después:</dt>
+        <dd>{{ resumen?.creditoDisponibleDespues | monto: moneda }}</dd>
+      </dl>
+      @if (simulando) { <p class="resumen-nota">Calculando...</p> }
+      @if (avisoResumen) { <p class="alerta alerta-error">{{ avisoResumen }}</p> }
+    </div>
+
+    @if (error) { <p class="alerta alerta-error">{{ error }}</p> }
+
+    <button type="button" class="btn btn-grande" (click)="registrar()" [disabled]="guardando || !resumen">
+      {{ guardando ? 'Registrando...' : 'Registrar compra' }}
+    </button>
+    <p class="nota centro">Se genera una sola obligación y un solo cronograma por el total de la compra.</p>
+  </aside>
+</div>
+
+<!-- Confirmación -->
+<app-modal [abierto]="!!registrada" titulo="¡Compra registrada!" (cerrar)="nuevaCompra()">
+  <dl class="modal-datos">
+    <dt>Compra:</dt><dd>{{ registrada?.idCompra }}</dd>
+    <dt>Cliente:</dt><dd>{{ registrada?.nombreCliente }}</dd>
+    <dt>Modalidad:</dt>
+    <dd>{{ registrada?.tipoPago }}{{ registrada?.tipoPago === 'Cuotas' ? ' (' + registrada?.numeroCuotas + ')' : '' }}</dd>
+  </dl>
+
+  <table class="tabla tabla-oscura tabla-modal">
+    <thead>
+      <tr><th>Producto</th><th class="derecha">Cant.</th><th class="derecha">Subtotal</th></tr>
+    </thead>
+    <tbody>
+      @for (d of registrada?.detalles ?? []; track d.idProducto) {
+        <tr>
+          <td>{{ d.descripcionProducto }}</td>
+          <td class="derecha">{{ d.cantidadProducto }}</td>
+          <td class="derecha">{{ d.subtotal | monto: registrada?.moneda }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <dl class="modal-datos modal-totales">
+    <dt>Monto total:</dt><dd>{{ registrada?.montoCompra | monto: registrada?.moneda }}</dd>
+    @if (registrada?.tipoPago === 'Cuotas') {
+      <dt>Cuota mensual:</dt><dd>{{ registrada?.montoCuota | monto: registrada?.moneda }}</dd>
+      <dt>Primera cuota:</dt><dd>{{ registrada?.proximaFechaPago | date: 'dd/MM/yyyy' }}</dd>
+    } @else {
+      <dt>Total a pagar:</dt><dd>{{ registrada?.montoTotalPagar | monto: registrada?.moneda }}</dd>
+      <dt>Fecha de pago:</dt><dd>{{ registrada?.fechaPagoPactada | date: 'dd/MM/yyyy' }}</dd>
+    }
+  </dl>
+
+  <div class="modal-botones">
+    <button type="button" class="btn" (click)="nuevaCompra()">Nueva compra</button>
+    @if (registrada?.tipoPago === 'Cuotas') {
+      <button type="button" class="btn btn-secundario" (click)="verCronograma()">Ver cronograma</button>
+    }
+  </div>
+</app-modal>

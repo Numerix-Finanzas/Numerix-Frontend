@@ -1,0 +1,91 @@
+<h1 class="titulo">Reporte de deuda</h1>
+
+<section class="panel-reporte">
+  <div class="reporte-izq">
+    <label class="etiqueta">Cliente:</label>
+    @if (esCliente) {
+      <input class="campo" type="text" readonly [value]="reporte?.numeroDocumentoCliente ?? cliente?.numeroDocumentoCliente ?? ''">
+    } @else {
+      <select class="campo" [(ngModel)]="idCliente" (ngModelChange)="alCambiarCliente()">
+        <option value="">Número de documento</option>
+        @for (c of clientes; track c.idCliente) {
+          <option [value]="c.idCliente">{{ c.numeroDocumentoCliente }} – {{ c.nombreCliente }}</option>
+        }
+      </select>
+    }
+    <input class="campo" type="text" readonly placeholder="Nombre cliente"
+           [value]="reporte?.nombreCliente ?? cliente?.nombreCliente ?? ''">
+    <input class="campo" type="text" readonly placeholder="Límite de crédito"
+           [value]="reporte ? ('Límite: ' + (reporte.limiteCredito | monto: moneda)) : ''">
+    <div class="fila-inline">
+      <span>Próxima fecha de pago:</span>
+      <input class="campo" type="text" readonly [value]="reporte?.proximaFechaPago | date: 'dd/MM/yyyy'">
+    </div>
+  </div>
+
+  <div class="reporte-der">
+    <input class="campo" type="text" readonly placeholder="Crédito disponible"
+           [value]="reporte ? ('Disponible: ' + (reporte.creditoDisponible | monto: moneda)) : ''">
+    <div class="fila-inline">
+      <span>Día de la fecha de corte:</span>
+      <input class="campo campo-corto" type="text" readonly [value]="reporte?.diaCorte ?? cliente?.diaCorte ?? ''">
+      <span>de cada mes</span>
+    </div>
+    <div class="fila-inline">
+      <span>Día de pago pactado:</span>
+      <input class="campo campo-corto" type="text" readonly [value]="reporte?.diaPagoPactado ?? cliente?.diaPagoPactado ?? ''">
+      <span>de cada mes</span>
+    </div>
+    <div class="fila-inline">
+      <span>Deuda a la fecha:</span>
+      <input class="campo" type="date" [(ngModel)]="fechaConsulta">
+      <button type="button" class="btn btn-grande" (click)="ver()" [disabled]="cargando">Ver &#128065;</button>
+    </div>
+  </div>
+</section>
+
+@if (error) { <p class="alerta alerta-error centrado">{{ error }}</p> }
+
+<h1 class="titulo">Historial de deudas</h1>
+<div class="tabla-contenedor">
+  <table class="tabla tabla-oscura">
+    <thead>
+      <tr>
+        <th>Fecha</th><th>CompraID</th><th>Producto</th><th>Vence</th><th>Días mora</th><th>Capital</th>
+        <th>Interés compensatorio</th><th>Interés moratorio</th><th>Total</th><th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (d of reporte?.deudas ?? []; track $index) {
+        <tr>
+          <td>{{ d.fechaCompra | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ d.idCompra }}</td>
+          <td>{{ d.descripcionProducto }}{{ d.numeroPeriodo && d.numeroCuotas && d.numeroCuotas > 1 ? ' · cuota ' + d.numeroPeriodo + '/' + d.numeroCuotas : '' }}</td>
+          <td>{{ d.fechaPagoPactada | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ d.diasMora }}</td>
+          <td>{{ d.capitalPendienteDeuda | monto: moneda }}</td>
+          <td>{{ d.interesCompensatorioDeuda | monto: moneda }}</td>
+          <td>{{ d.interesMoratorioDeuda | monto: moneda }}</td>
+          <td>{{ d.montoTotalDeuda | monto: moneda }}</td>
+          <td><app-estado [estado]="d.estadoDeuda"></app-estado></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="10" class="vacio">
+            {{ cargando ? 'Cargando...' : (reporte ? 'El cliente no tiene deudas pendientes.' : 'Seleccione un cliente y pulse Ver.') }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (reporte) {
+  <div class="totales">
+    <div><span>Capital:</span><strong>{{ reporte.capitalTotal | monto: moneda }}</strong></div>
+    <div><span>Interés compensatorio:</span><strong>{{ reporte.interesCompensatorioTotal | monto: moneda }}</strong></div>
+    <div><span>Interés moratorio:</span><strong>{{ reporte.interesMoratorioTotal | monto: moneda }}</strong></div>
+    <div class="total-final"><span>TOTAL:</span><strong>{{ reporte.montoTotalPagar | monto: moneda }}</strong></div>
+    <div><span>Moneda:</span><strong>{{ moneda }}</strong></div>
+  </div>
+}

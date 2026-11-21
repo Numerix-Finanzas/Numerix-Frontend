@@ -1,0 +1,75 @@
+<div class="pantalla-centrada">
+  <form class="tarjeta-login tarjeta-ancha" [formGroup]="form" (ngSubmit)="registrar()">
+    <div class="titulo-con-logo">
+      <img src="img/logo.png" alt="">
+      <h1 class="titulo">Registrar negocio</h1>
+    </div>
+
+    <label class="campo-icono" [class.con-error]="invalido('nombreNegocio')">
+      <span class="icono">🏪</span>
+      <input type="text" formControlName="nombreNegocio" placeholder="Nombre del negocio">
+    </label>
+    @if (errores['nombreNegocio']) { <small class="error-campo">{{ errores['nombreNegocio'] }}</small> }
+
+    <label class="campo-icono" [class.con-error]="invalido('rucNegocio')">
+      <span class="icono">🪪</span>
+      <input type="text" formControlName="rucNegocio" placeholder="RUC del negocio" maxlength="11" inputmode="numeric">
+    </label>
+    @if (invalido('rucNegocio')) { <small class="error-campo">El RUC debe tener 11 dígitos numéricos.</small> }
+    @else if (errores['rucNegocio']) { <small class="error-campo">{{ errores['rucNegocio'] }}</small> }
+
+    <label class="campo-icono" [class.con-error]="invalido('tipoNegocio')">
+      <span class="icono">🏙️</span>
+      <select formControlName="tipoNegocio">
+        <option value="" disabled>Tipo de negocio</option>
+        @for (t of tiposNegocio; track t) { <option [value]="t">{{ t }}</option> }
+      </select>
+    </label>
+
+    <label class="campo-icono" [class.con-error]="invalido('nombreAdministradorNegocio')">
+      <span class="icono">💼</span>
+      <input type="text" formControlName="nombreAdministradorNegocio" placeholder="Nombre completo">
+    </label>
+
+    <label class="campo-icono" [class.con-error]="invalido('correoElectronico')">
+      <span class="icono">📬</span>
+      <input type="email" formControlName="correoElectronico" placeholder="Correo electrónico">
+    </label>
+    @if (invalido('correoElectronico')) { <small class="error-campo">Correo no válido (ejemplo: nombre&#64;dominio.com).</small> }
+
+    <label class="campo-icono" [class.con-error]="invalido('usuario')">
+      <span class="icono">👨</span>
+      <input type="text" formControlName="usuario" placeholder="Usuario" maxlength="20" autocomplete="off">
+    </label>
+    @if (errores['usuario']) { <small class="error-campo">{{ errores['usuario'] }}</small> }
+
+    <label class="campo-icono" [class.con-error]="invalido('contrasena')">
+      <span class="icono">🔑</span>
+      <input [type]="verContrasena ? 'text' : 'password'" formControlName="contrasena" placeholder="Contraseña"
+             autocomplete="new-password">
+      <button type="button" class="btn-ojo" (click)="verContrasena = !verContrasena">
+        {{ verContrasena ? '🙈' : '👁' }}
+      </button>
+    </label>
+    @if (invalido('contrasena')) { <small class="error-campo">La contraseña debe tener mínimo 8 caracteres.</small> }
+
+    @if (error) { <p class="alerta alerta-error">{{ error }}</p> }
+
+    <button type="submit" class="btn btn-grande" [disabled]="guardando">
+      {{ guardando ? 'Registrando...' : 'Registrar negocio' }}
+    </button>
+  </form>
+</div>
+
+<app-modal [abierto]="!!registrado" titulo="¡Negocio registrado correctamente!" (cerrar)="nuevo()">
+  <dl class="modal-datos">
+    <dt>Negocio:</dt><dd>{{ registrado?.nombreNegocio }}</dd>
+    <dt>RUC:</dt><dd>{{ registrado?.rucNegocio }}</dd>
+    <dt>Administrador:</dt><dd>{{ registrado?.nombreAdministradorNegocio }}</dd>
+    <dt>Usuario:</dt><dd>{{ registrado?.usuario }}</dd>
+  </dl>
+  <div class="modal-botones">
+    <button type="button" class="btn" (click)="nuevo()">Registrar otro</button>
+    <button type="button" class="btn btn-secundario" (click)="irAlListado()">Ver listado</button>
+  </div>
+</app-modal>

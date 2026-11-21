@@ -1,0 +1,69 @@
+<h1 class="titulo">Registro de productos</h1>
+
+<form [formGroup]="form" (ngSubmit)="registrar()">
+  <div class="dos-paneles">
+    <section class="panel">
+      <input class="campo" [class.con-error]="invalido('descripcionProducto')" type="text"
+             formControlName="descripcionProducto" placeholder="Descripción">
+      <input class="campo" type="text" formControlName="marcaProducto" placeholder="Marca">
+      <input class="campo" type="text" formControlName="proveedorProducto" placeholder="Proveedor">
+      <select class="campo" formControlName="unidadMedida" title="Unidad de medida">
+        @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
+      </select>
+
+      <div class="subir-imagen">
+        @if (vistaPrevia) {
+          <img [src]="vistaPrevia" alt="Imagen del producto">
+          <button type="button" class="btn-enlace" (click)="quitarImagen()">Quitar imagen</button>
+        }
+        <label class="btn btn-gris">
+          {{ subiendo ? 'Subiendo...' : (vistaPrevia ? 'Cambiar imagen' : 'Subir imagen') }}
+          <input type="file" accept=".jpg,.jpeg,.png" hidden (change)="seleccionarImagen($event)" [disabled]="subiendo">
+        </label>
+        <small class="ayuda">Opcional · .jpg o .png · máx. 2 MB</small>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label class="etiqueta-flotante">Precio contado
+        <input class="campo" [class.con-error]="invalido('precioContado')" type="number" step="0.01" min="0"
+               formControlName="precioContado" placeholder="0.00">
+      </label>
+      <label class="etiqueta-flotante">Precio crédito
+        <input class="campo" [class.con-error]="invalido('precioCredito')" type="number" step="0.01" min="0"
+               formControlName="precioCredito" placeholder="0.00">
+      </label>
+      <select class="campo" [class.con-error]="invalido('modalidadVentaProducto')" formControlName="modalidadVentaProducto">
+        <option value="" disabled>Modalidad de venta</option>
+        @for (m of modalidades; track m.valor) { <option [value]="m.valor">{{ m.etiqueta }}</option> }
+      </select>
+
+      <div class="estado-radios">
+        <span>Estado:</span>
+        <label><input type="radio" formControlName="estadoProducto" value="Activo"> Activo</label>
+        <label><input type="radio" formControlName="estadoProducto" value="Inactivo"> Inactivo</label>
+      </div>
+    </section>
+  </div>
+
+  @if (error) { <p class="alerta alerta-error centrado">{{ error }}</p> }
+
+  <div class="acciones-centro">
+    <button type="submit" class="btn btn-grande" [disabled]="guardando || subiendo">
+      {{ guardando ? 'Registrando...' : 'Registrar' }}
+    </button>
+  </div>
+</form>
+
+<app-modal [abierto]="!!registrado" titulo="¡Producto registrado correctamente!" (cerrar)="nuevo()">
+  <dl class="modal-datos">
+    <dt>Código:</dt><dd>{{ registrado?.idProducto }}</dd>
+    <dt>Descripción:</dt><dd>{{ registrado?.descripcionProducto }}</dd>
+    <dt>Precio crédito:</dt><dd>{{ registrado?.precioCredito | monto }}</dd>
+    <dt>Modalidad:</dt><dd>{{ etiquetaModalidad(registrado?.modalidadVentaProducto) }}</dd>
+  </dl>
+  <div class="modal-botones">
+    <button type="button" class="btn" (click)="nuevo()">Registrar otro</button>
+    <button type="button" class="btn btn-secundario" (click)="irAlListado()">Ver listado</button>
+  </div>
+</app-modal>

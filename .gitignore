@@ -1,0 +1,10 @@
+/dist
+/out-tsc
+/tmp
+/node_modules
+/.angular/cache
+.angular/
+/.idea
+*.iml
+.DS_Store
+npm-debug.log

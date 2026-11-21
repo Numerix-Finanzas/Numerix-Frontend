@@ -1,0 +1,40 @@
+<div class="pantalla-centrada">
+  <form class="tarjeta-login" [formGroup]="form" (ngSubmit)="ingresar()">
+    <img class="logo-grande" src="img/logo.png" alt="Numerix">
+    <h1 class="titulo">Numerix</h1>
+    <h2 class="subtitulo">Iniciar sesión</h2>
+
+    <label class="campo-icono">
+      <span class="icono">👨</span>
+      <input type="text" formControlName="usuario" placeholder="Usuario" autocomplete="username">
+    </label>
+
+    <label class="campo-icono">
+      <span class="icono">🔑</span>
+      <input [type]="verContrasena ? 'text' : 'password'" formControlName="contrasena"
+             placeholder="Contraseña" autocomplete="current-password">
+      <button type="button" class="btn-ojo" (click)="verContrasena = !verContrasena"
+              [title]="verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+        {{ verContrasena ? '🙈' : '👁' }}
+      </button>
+    </label>
+
+    <div class="login-opciones">
+      <label class="check">
+        <input type="checkbox" formControlName="recordarContrasena"> Recordar contraseña
+      </label>
+      <a href="#" (click)="olvideContrasena($event)">¿Olvidaste tu contraseña?</a>
+    </div>
+
+    @if (error) {
+      <p class="alerta alerta-error">{{ error }}</p>
+    }
+    @if (aviso) {
+      <p class="alerta alerta-info">{{ aviso }}</p>
+    }
+
+    <button type="submit" class="btn btn-grande" [disabled]="cargando">
+      {{ cargando ? 'Ingresando...' : 'Iniciar sesión' }}
+    </button>
+  </form>
+</div>

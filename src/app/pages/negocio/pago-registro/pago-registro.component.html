@@ -1,0 +1,77 @@
+<form class="dos-paneles" [formGroup]="form" (ngSubmit)="registrar()">
+  <section>
+    <h1 class="titulo">Registrar pago</h1>
+    <div class="panel">
+      <select class="campo" formControlName="idCliente">
+        <option value="" disabled>Cliente</option>
+        @for (c of clientes; track c.idCliente) {
+          <option [value]="c.idCliente">{{ c.nombreCliente }} ({{ c.numeroDocumentoCliente }})</option>
+        }
+      </select>
+
+      <select class="campo" formControlName="idCuota">
+        <option [ngValue]="null" disabled>
+          {{ form.controls.idCliente.value && !obligaciones.length ? 'El cliente no tiene obligaciones pendientes' : 'Obligación pendiente' }}
+        </option>
+        @for (o of obligaciones; track o.idCuota) {
+          <option [ngValue]="o.idCuota">{{ etiquetaObligacion(o) }}</option>
+        }
+      </select>
+
+      <label class="etiqueta-flotante">Fecha pactada
+        <input class="campo" type="text" readonly
+               [value]="(simulacion?.fechaPagoPactada ?? obligacionSeleccionada?.fechaPagoPactada) | date: 'dd/MM/yyyy'">
+      </label>
+
+      <label class="etiqueta-flotante">Días de mora
+        <input class="campo" type="text" readonly
+               [value]="simulacion ? (simulacion.diasMora + (simulacion.diasAnticipacion ? ' (pago anticipado ' + simulacion.diasAnticipacion + ' días)' : '')) : ''">
+      </label>
+
+      <label class="etiqueta-flotante">Fecha real de pago
+        <input class="campo" type="date" formControlName="fechaPagoReal">
+      </label>
+    </div>
+  </section>
+
+  <section class="resumen-columna">
+    <h2 class="resumen-titulo">Resumen</h2>
+    <div class="resumen">
+      <dl>
+        <dt>Interés moratorio:</dt><dd>{{ simulacion?.interesMoratorioObligacion | monto: moneda }}</dd>
+        <dt>Interés compensatorio:</dt><dd>{{ simulacion?.interesCompensatorioDeuda | monto: moneda }}</dd>
+        <dt>Capital:</dt><dd>{{ simulacion?.capitalPendienteDeuda | monto: moneda }}</dd>
+        <dt class="separado">Total a pagar:</dt><dd class="separado destacado">{{ simulacion?.montoTotalObligacion | monto: moneda }}</dd>
+      </dl>
+      @if (simulacion) {
+        <p class="resumen-nota">Orden de imputación: mora → interés compensatorio → capital</p>
+      }
+      @if (avisoSimulacion) { <p class="alerta alerta-error">{{ avisoSimulacion }}</p> }
+    </div>
+
+    @if (error) { <p class="alerta alerta-error">{{ error }}</p> }
+
+    <button type="submit" class="btn btn-grande" [disabled]="guardando || !simulacion">
+      {{ guardando ? 'Registrando...' : 'Registrar pago' }}
+    </button>
+  </section>
+</form>
+
+<app-modal [abierto]="!!registrado" titulo="¡Pago registrado!" (cerrar)="cerrarConfirmacion()">
+  <dl class="modal-datos">
+    <dt>Pago:</dt><dd>{{ registrado?.idPago }}</dd>
+    <dt>Producto:</dt><dd>{{ registrado?.descripcionProducto }}</dd>
+    <dt>Fecha de pago:</dt><dd>{{ registrado?.fechaPagoReal | date: 'dd/MM/yyyy' }}</dd>
+    <dt>Mora:</dt><dd>{{ registrado?.montoImputadoMora | monto: moneda }}</dd>
+    <dt>Interés:</dt><dd>{{ registrado?.montoImputadoInteres | monto: moneda }}</dd>
+    <dt>Capital:</dt><dd>{{ registrado?.montoImputadoCapital | monto: moneda }}</dd>
+    <dt>Total pagado:</dt><dd>{{ registrado?.montoPagado | monto: moneda }}</dd>
+    <dt>Estado de la deuda:</dt><dd>{{ registrado?.estadoDeuda }}</dd>
+    @if (registrado?.creditoDisponible !== null && registrado?.creditoDisponible !== undefined) {
+      <dt>Crédito disponible:</dt><dd>{{ registrado?.creditoDisponible | monto: moneda }}</dd>
+    }
+  </dl>
+  <div class="modal-botones">
+    <button type="button" class="btn btn-grande" (click)="cerrarConfirmacion()">Nuevo pago</button>
+  </div>
+</app-modal>

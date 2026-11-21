@@ -1,0 +1,84 @@
+<h1 class="titulo">Movimientos</h1>
+
+<div class="filtros">
+  <label>Cliente:
+    @if (esCliente) {
+      <input class="campo-filtro" type="text" readonly [value]="cliente?.nombreCliente ?? ''">
+    } @else {
+      <select class="campo-filtro" [(ngModel)]="idCliente" (ngModelChange)="alCambiarCliente()">
+        <option value="">Seleccione...</option>
+        @for (c of clientes; track c.idCliente) {
+          <option [value]="c.idCliente">{{ c.nombreCliente }}</option>
+        }
+      </select>
+    }
+  </label>
+  <label>Desde:
+    <input class="campo-filtro" type="date" [(ngModel)]="desde" (ngModelChange)="alCambiarFechas()">
+  </label>
+  <label>Hasta:
+    <input class="campo-filtro" type="date" [(ngModel)]="hasta" (ngModelChange)="alCambiarFechas()">
+  </label>
+</div>
+
+<div class="pestanas">
+  <button type="button" class="btn btn-grande" [class.seleccionado]="vista === 'compras'"
+          (click)="cambiarVista('compras')">Compras</button>
+  <button type="button" class="btn btn-grande" [class.seleccionado]="vista === 'pagos'"
+          (click)="cambiarVista('pagos')">Pagos</button>
+</div>
+
+@if (error) { <p class="alerta alerta-error centrado">{{ error }}</p> }
+
+<div class="tabla-contenedor tabla-media">
+  @if (vista === 'compras') {
+    <table class="tabla tabla-oscura">
+      <thead>
+        <tr><th>Fecha</th><th>Compra</th><th>Productos</th><th>Tipo pago</th><th>Cuotas</th><th>Monto</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        @for (c of compras; track c.idCompra) {
+          <tr>
+            <td>{{ c.fechaCompra | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ c.idCompra }}</td>
+            <td>
+              @for (d of c.detalles ?? []; track d.idProducto) {
+                <div>{{ d.descripcionProducto }} × {{ d.cantidadProducto }}</div>
+              } @empty {
+                {{ c.descripcionProducto }} × {{ c.cantidadProducto }}
+              }
+            </td>
+            <td>{{ c.tipoPago }}</td>
+            <td>{{ c.numeroCuotas }}</td>
+            <td>{{ c.montoCompra | monto: moneda }}</td>
+            <td><app-estado [estado]="c.estadoDeuda"></app-estado></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="vacio">{{ mensajeVacio }}</td></tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <table class="tabla tabla-oscura">
+      <thead>
+        <tr><th>Fecha</th><th>PagoID</th><th>Producto</th><th>Capital</th><th>Interés</th><th>Mora</th><th>Total</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        @for (p of pagos; track p.idPago) {
+          <tr>
+            <td>{{ p.fechaPagoReal | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ p.idPago }}</td>
+            <td>{{ p.descripcionProducto }}{{ p.numeroPeriodo ? ' · cuota ' + p.numeroPeriodo : '' }}</td>
+            <td>{{ p.montoImputadoCapital | monto: moneda }}</td>
+            <td>{{ p.montoImputadoInteres | monto: moneda }}</td>
+            <td>{{ p.montoImputadoMora | monto: moneda }}</td>
+            <td>{{ p.montoPagado | monto: moneda }}</td>
+            <td><app-estado [estado]="p.estadoDeuda"></app-estado></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="vacio">{{ mensajeVacio }}</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

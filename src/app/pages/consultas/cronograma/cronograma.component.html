@@ -1,0 +1,84 @@
+<h1 class="titulo">Cronograma</h1>
+
+<div class="filtros">
+  <label>Cliente:
+    @if (esCliente) {
+      <input class="campo-filtro" type="text" readonly [value]="datos?.nombreCliente ?? cliente?.nombreCliente ?? ''">
+    } @else {
+      <select class="campo-filtro" [(ngModel)]="idCliente" (ngModelChange)="alCambiarCliente()">
+        <option value="">Seleccione...</option>
+        @for (c of clientes; track c.idCliente) {
+          <option [value]="c.idCliente">{{ c.nombreCliente }}</option>
+        }
+      </select>
+    }
+  </label>
+  <label>Próxima fecha de pago:
+    <input class="campo-filtro" type="text" readonly [value]="datos?.proximaFechaPago | date: 'dd/MM/yyyy'">
+  </label>
+</div>
+
+@if (error) { <p class="alerta alerta-error centrado">{{ error }}</p> }
+
+@for (cr of datos?.cronogramas ?? []; track cr.idCompra) {
+  <div class="cabecera-cronograma">
+    <strong>{{ cr.idCompra }}</strong> · {{ cr.descripcionProducto }} ·
+    Compra del {{ cr.fechaCompra | date: 'dd/MM/yyyy' }} por {{ cr.montoCompra | monto: cr.moneda }} ·
+    {{ cr.numeroCuotas }} cuotas · TEM {{ cr.temCompensatoria }} ·
+    Días de gracia {{ cr.diasGracia }} · Capital actualizado {{ cr.capitalActualizado | monto: cr.moneda }}
+    <app-estado [estado]="cr.estadoDeuda"></app-estado>
+  </div>
+  <div class="tabla-contenedor">
+    <table class="tabla tabla-oscura">
+      <thead>
+        <tr>
+          <th>N.º cuota</th><th>Fecha de vencimiento</th><th>Saldo inicial</th><th>Interés compensatorio</th>
+          <th>Amortización</th><th>Cuota</th><th>Saldo final</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (q of cr.cuotas; track q.idCuota) {
+          <tr>
+            <td>{{ q.numeroPeriodo }}</td>
+            <td>{{ q.fechaVencimientoPeriodo | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ q.saldoInicialPeriodo | monto: cr.moneda }}</td>
+            <td>{{ q.interesPeriodo | monto: cr.moneda }}</td>
+            <td>{{ q.amortizacionPeriodo | monto: cr.moneda }}</td>
+            <td>{{ q.cuotaPeriodo | monto: cr.moneda }}</td>
+            <td>{{ q.saldoFinalPeriodo | monto: cr.moneda }}</td>
+            <td><app-estado [estado]="q.estadoCuota"></app-estado></td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Totales</td>
+          <td>{{ cr.totalInteres | monto: cr.moneda }}</td>
+          <td>{{ cr.totalAmortizacion | monto: cr.moneda }}</td>
+          <td>{{ cr.totalCuotas | monto: cr.moneda }}</td>
+          <td colspan="2">{{ cr.cuotasPagadas }} de {{ cr.numeroCuotas }} pagadas</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+} @empty {
+  <div class="tabla-contenedor">
+    <table class="tabla tabla-oscura">
+      <thead>
+        <tr>
+          <th>N.º cuota</th><th>Fecha de vencimiento</th><th>Saldo inicial</th><th>Interés compensatorio</th>
+          <th>Amortización</th><th>Cuota</th><th>Saldo final</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="8" class="vacio">
+            @if (cargando) { Cargando... }
+            @else if (datos) { El cliente no tiene compras en cuotas. Las compras a un solo pago se ven en Movimientos y en el Reporte de deuda. }
+            @else { Seleccione un cliente para ver su cronograma. }
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+}

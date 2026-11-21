@@ -1,0 +1,116 @@
+<form [formGroup]="form" (ngSubmit)="registrar()">
+  <h1 class="titulo">Cliente</h1>
+  <div class="columna-centrada">
+    <input class="campo" [class.con-error]="invalido('nombreCliente')" type="text"
+           formControlName="nombreCliente" placeholder="Nombre">
+
+    <label class="etiqueta">Tipo de documento:</label>
+    <select class="campo" formControlName="tipoDocumentoCliente">
+      <option value="DNI">DNI</option>
+      <option value="CE">Carné de extranjería (CE)</option>
+      <option value="RUC">RUC</option>
+    </select>
+
+    <input class="campo" [class.con-error]="invalido('numeroDocumentoCliente')" type="text"
+           formControlName="numeroDocumentoCliente" placeholder="Número de documento" maxlength="12">
+    @if (invalido('numeroDocumentoCliente')) {
+      <small class="error-campo">{{ ayudaDocumento[form.controls.tipoDocumentoCliente.value] }}</small>
+    }
+  </div>
+
+  <h1 class="titulo">Condiciones de crédito</h1>
+  <section class="panel-condiciones">
+    <div class="fila-condicion">
+      <label>Moneda:</label>
+      <select class="campo" formControlName="moneda">
+        <option value="PEN">Soles (PEN)</option>
+        <option value="USD">Dólares (USD)</option>
+      </select>
+    </div>
+    <div class="fila-condicion">
+      <input class="campo" [class.con-error]="invalido('limiteCredito')" type="number" step="0.01" min="0"
+             formControlName="limiteCredito" placeholder="Límite de crédito">
+    </div>
+
+    <div class="fila-condicion">
+      <label>Tipo de tasa:</label>
+      <select class="campo" formControlName="tipoTasa">
+        <option value="Efectiva">Efectiva</option>
+        <option value="Nominal">Nominal</option>
+      </select>
+    </div>
+    <div class="fila-condicion">
+      <input class="campo" [class.con-error]="invalido('porcentajeTasa')" type="number" step="any" min="0"
+             formControlName="porcentajeTasa" placeholder="Porcentaje de tasa (%)">
+    </div>
+
+    <div class="fila-condicion">
+      <label>Tipo de tasa moratoria:</label>
+      <select class="campo" formControlName="tipoTasaMoratoria">
+        <option value="Efectiva">Efectiva</option>
+        <option value="Nominal">Nominal</option>
+      </select>
+    </div>
+    <div class="fila-condicion">
+      <input class="campo" [class.con-error]="invalido('porcentajeTasaMoratoria')" type="number" step="any" min="0"
+             formControlName="porcentajeTasaMoratoria" placeholder="Porcentaje de tasa moratoria (%)">
+    </div>
+
+    <div class="fila-condicion">
+      <label>Periodo de tasa:</label>
+      <select class="campo" formControlName="periodoTasa">
+        @for (p of periodos; track p) { <option [value]="p">{{ p }}</option> }
+      </select>
+    </div>
+    <div class="fila-condicion">
+      <label>Periodo de capitalización:</label>
+      <input class="campo campo-corto" [class.con-error]="invalido('periodoCapitalizacion')" type="number" min="1"
+             formControlName="periodoCapitalizacion">
+      <span class="sufijo">días</span>
+      @if (!usaCapitalizacion) { <small class="ayuda">(solo para tasas nominales)</small> }
+    </div>
+
+    <div class="fila-condicion">
+      <label>Día de la fecha de corte:</label>
+      <input class="campo campo-corto" [class.con-error]="invalido('diaCorte')" type="number" min="1" max="30"
+             formControlName="diaCorte">
+      <span class="sufijo">de cada mes</span>
+    </div>
+    <div class="fila-condicion">
+      <label>Día de la fecha de pago:</label>
+      <input class="campo campo-corto" [class.con-error]="invalido('diaPagoPactado')" type="number" min="1" max="30"
+             formControlName="diaPagoPactado">
+      <span class="sufijo">de cada mes</span>
+    </div>
+
+    <div class="fila-condicion fila-completa">
+      <label>Máximo de meses:</label>
+      <input class="campo campo-corto" [class.con-error]="invalido('maximoMesesCredito')" type="number" min="1"
+             formControlName="maximoMesesCredito">
+    </div>
+  </section>
+
+  @if (error) { <p class="alerta alerta-error centrado">{{ error }}</p> }
+
+  <div class="acciones-centro">
+    <button type="submit" class="btn btn-grande" [disabled]="guardando">
+      {{ guardando ? 'Registrando...' : 'Registrar' }}
+    </button>
+  </div>
+</form>
+
+<app-modal [abierto]="!!registrado" titulo="¡Cliente registrado correctamente!" (cerrar)="nuevo()">
+  <dl class="modal-datos">
+    <dt>Cliente:</dt><dd>{{ registrado?.cliente?.nombreCliente }}</dd>
+    <dt>Usuario:</dt><dd class="credencial">{{ registrado?.usuario }}</dd>
+    <dt>Contraseña:</dt><dd class="credencial">{{ registrado?.contrasena }}</dd>
+  </dl>
+  <p class="modal-info">
+    <span class="icono-info">i</span>
+    Usuario y contraseña generados para el acceso del cliente
+  </p>
+  <div class="modal-botones">
+    <button type="button" class="btn" (click)="nuevo()">Registrar otro</button>
+    <button type="button" class="btn btn-secundario" (click)="irAlListado()">Ver listado</button>
+  </div>
+</app-modal>
